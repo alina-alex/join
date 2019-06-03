@@ -1,0 +1,39 @@
+<?php 
+/*
+	Template Name:Test
+*/
+?>
+<?php 
+
+if (isset($_REQUEST['action']) && $_REQUEST['action'] == 'from_sf') {
+    do_action('admin_post');
+    do_action('admin_post_nopriv');
+    do_action('admin_post_from_sf');
+    do_action('admin_post_nopriv_from_sf');
+}
+
+?>
+
+<?php get_header();?>
+<style>
+    .content_wrapper{
+        direction: initial;
+    }
+
+</style>
+<?php 
+
+$string = file_get_contents("https://join.co.il/wp-content/themes/join/data.json");
+$json = json_decode($string, true);
+
+foreach ($json as $key => $value) {
+    if (!is_array($value)) {
+        echo $key . '=>' . $value . '<br />';
+    } else {
+        foreach ($value as $key => $val) {
+            echo $key . '=>' . $val . '<br />';
+        }
+    }
+}
+?>
+<?php get_footer();?>
