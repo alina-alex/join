@@ -1,0 +1,74 @@
+
+function save_response(WP_REST_Request $request) {
+
+    $payload = $request->get_params();
+    if ($_REQUEST["data"]) {
+        $_REQUEST["data"] = json_decode($_REQUEST["data"]);
+    }
+    file_put_contents(ABSPATH . 'wp-content/themes/join/data.json', json_encode($payload));
+    
+    $developer_data = json_decode( file_get_contents( get_template_directory_uri() . '/data.json' ) );
+     $args = array(
+    'meta_query' => array(
+      array(
+        'key'   => 'developer_id',
+        'value' => $developer_data->wpId
+      )
+    ),
+    'post_type'      => 'job',
+    'post_status'    => array('publish', 'pending', 'draft', 'auto-draft', 'future', 'private', 'inherit'),
+    'posts_per_page' => 1
+  );
+     
+  $developer = get_posts( $args );
+
+  $developer_id = '';
+
+  if ( $developer )
+    $developer_id = $developer[0]->ID;   
+     
+  $developer_post = array(
+    'ID'            => $developer_id,
+    'post_title'    => $developer_data->title,
+    'post_type'     => 'job',
+    'post_status'   => 'private'
+  );
+    
+    $status = !!$developer_data->publish;
+
+    if($status == true)
+        $developer_post['post_status'] = 'publish';
+    
+
+    $developer_id = wp_insert_post( $developer_post );
+    $post_link = get_permalink($developer_id);
+     $list = array( 
+        'ID'            => $developer_id,
+        'link'          => $post_link
+     );
+  if ( $developer_id ) {
+    update_post_meta( $developer_id, 'developer_id', $developer_data->wpId );
+    update_post_meta( $developer_id, 'jobdescription', $developer_data->description );
+    update_post_meta( $developer_id, 'jobresponsibilities', $developer_data->jobResponsibilities ); 
+    update_post_meta( $developer_id, 'joblocation', 'מרכז' );
+    update_post_meta( $developer_id, 'jobType', $developer_data->type );
+    update_post_meta( $developer_id, 'blockLanguage', $developer_data->lang );
+    update_post_meta( $developer_id, 'jobrequirements', $developer_data->jobRequirements );
+    update_post_meta( $developer_id, 'json', addslashes( file_get_contents( get_template_directory_uri() . '/data.json' ) ) );
+    wp_set_object_terms( $developer_id, $developer_data->categories, 'category' );
+      
+      $file = 'respons.json';
+      $current = file_get_contents($file);
+      $current = $list;
+      file_put_contents(ABSPATH . 'wp-content/themes/join/respons.json', json_encode($post_link));
+      return $post_link;
+  }
+    
+}
+
+add_action( 'rest_api_init', function () {
+	register_rest_route( 'join', '/test-page', [
+		'methods' => 'POST',
+		'callback' => 'save_response',
+	] );
+} );
